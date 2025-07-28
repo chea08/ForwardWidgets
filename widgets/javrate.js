@@ -4,7 +4,7 @@ var WidgetMetadata = {
   description: "获取 JAVRate 推荐",
   author: "Ti",
   site: "https://www.javrate.com/",
-  version: "2.1.0",
+  version: "1.0.0",
   requiredVersion: "0.0.1",
   detailCacheDuration: 60,
   modules: [
@@ -773,9 +773,9 @@ var WidgetMetadata = {
         }
       ]
     },
-    // 首页分类
+    // 首页版块
     {
-      title: "首页分类",
+      title: "首页版块",
       description: "选择需要浏览的分类",
       requiresWebView: false,
       functionName: "loadPage",
@@ -787,30 +787,12 @@ var WidgetMetadata = {
           type: "enumeration",
           enumOptions: [
             { title: "最新发布", value: "/movie/new/" },
-            { title: "热门排行", value: "/best/thisweek" },
+            { title: "热门排行", value: "/best" },
             { title: "无码A片", value: "/menu/uncensored/5-2-" },
             { title: "日本A片", value: "/menu/censored/5-2-" },
             { title: "国产AV", value: "/menu/chinese/5-2-" }
           ],
           value: "/movie/new/"
-        },
-        {
-          name: "sort_by",
-          title: "时间范围",
-          type: "enumeration",
-          belongTo: {
-            paramName: "categoryType",
-            value: ["/best/thisweek"],
-          },
-          enumOptions: [
-            { title: "最近一周", value: "/best/thisweek" },
-            { title: "最近一月", value: "/best/thismonth" },
-            { title: "最近半年", value: "/best/thishalfyear" },
-            { title: "最近一年", value: "/best/thisyear" },
-            { title: "全部时间", value: "/best" }
-          ],
-          value: "/best/thisweek",
-          description: "选择要查看的时间范围（仅热门排行有效）"
         },
         {
           name: "page",
@@ -919,7 +901,7 @@ var WidgetMetadata = {
 };
 
 
-const ARTIST_MAP_REMOTE_URL = "https://raw.githubusercontent.com/pack1r/ForwardWidgets/refs/heads/main/widgets/javrate_actors.json";
+const ARTIST_MAP_REMOTE_URL = "https://raw.githubusercontent.com/quantumultxx/ForwardWidgets/refs/heads/main/data/javrate_actors.json";
 let artistMapCache = null;
 let artistMapCacheTime = 0;
 const CACHE_DURATION = 24 * 60 * 60 * 1000;
@@ -944,12 +926,18 @@ async function fetchArtistMap() {
     
     if (!response.data) throw new Error("艺人列表返回空数据");
     
-    artistMapCache = typeof response.data === "object" 
+    let rawData = typeof response.data === "object" 
       ? response.data 
       : JSON.parse(response.data);
     
-    if (typeof artistMapCache !== "object" || artistMapCache === null) {
+    if (typeof rawData !== "object" || rawData === null) {
       throw new Error("艺人列表格式无效");
+    }
+    
+    if (rawData.actors && typeof rawData.actors === "object") {
+      artistMapCache = rawData.actors;
+    } else {
+      artistMapCache = rawData;
     }
     
     artistMapCacheTime = Date.now();
@@ -1169,10 +1157,9 @@ async function fetchDataForPath(path, params = {}) {
       : `${BASE_URL}${path}`;
   }
   else if (path.startsWith("/best/")) { 
-    const sortByPath = params.sort_by || path; 
-    requestUrl = page > 1 
-      ? `${BASE_URL}${sortByPath}?page=${page}` 
-      : `${BASE_URL}${sortByPath}`;
+  requestUrl = page > 1 
+    ? `${BASE_URL}${path}?page=${page}` 
+    : `${BASE_URL}${path}`;
   }
   else if ([
     "/menu/uncensored/5-2-", 
